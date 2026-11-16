@@ -2,8 +2,8 @@ import { useState } from "react";
 
 const PAGINAS = [
   { id: "inicio", titulo: "Inicio" },
-  { id: "publicar", titulo: "Publicar", privada: true },
-  { id: "mercado", titulo: "Mercado" }
+  { id: "mercado", titulo: "Mercado" },
+  { id: "publicar", titulo: "Publicar", privada: true }
 ];
 
 export default function Header({
@@ -58,8 +58,24 @@ export default function Header({
             className={`collapse navbar-collapse ${menuAbierto ? "menu-abierto" : ""}`}
             id="menuPrincipal"
           >
-            {paginaActual !== "publicar" && (
-              <div className="search-section">
+            {/* Izquierda: páginas */}
+            <ul className="navbar-nav">
+              {paginasVisibles.map((pagina) => (
+                <li className="nav-item" key={pagina.id}>
+                  <a
+                    href="#"
+                    className={`nav-link ${paginaActual === pagina.id ? "active" : ""}`}
+                    onClick={() => navegar(pagina.id)}
+                  >
+                    {pagina.titulo}
+                  </a>
+                </li>
+              ))}
+            </ul>
+
+            {/* Centro: buscador */}
+            <div className="search-section">
+              {paginaActual !== "publicar" && (
                 <div className="search-container">
                   <span className="search-icon">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="#0e1724">
@@ -75,52 +91,49 @@ export default function Header({
                     onChange={(event) => onBuscar(event.target.value)}
                   />
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            <ul className="navbar-nav ms-auto">
-              {usuario !== null && (paginaActual === "mercado" || paginaActual === "producto") && (
-                <li className="nav-item">
+            {/* Derecha: usuario, carrito y botón principal de sesión */}
+            <div className="zona-usuario">
+              {usuario !== null && (
+                <>
+                  {/* El nombre de usuario abre su perfil (compras y ventas) */}
                   <button
                     type="button"
-                    className="nav-link btn btn-link carrito-nav"
-                    onClick={onAbrirCarrito}
+                    className={`nombre-usuario btn-nombre-usuario ${paginaActual === "perfil" ? "active" : ""}`}
+                    onClick={() => navegar("perfil")}
+                    title="Ver mi perfil"
                   >
-                    🛒 Carrito ({totalCarrito})
+                    {usuario.nick}
                   </button>
-                </li>
-              )}
 
-              {paginasVisibles.map((pagina) => (
-                <li className="nav-item" key={pagina.id}>
-                  <a
-                    href="#"
-                    className={`nav-link ${paginaActual === pagina.id ? "active" : ""}`}
-                    onClick={() => navegar(pagina.id)}
+                  <button
+                    type="button"
+                    className="btn-carrito-icono"
+                    onClick={onAbrirCarrito}
+                    aria-label="Ver carrito"
                   >
-                    {pagina.titulo}
-                  </a>
-                </li>
-              ))}
+                    🛒
+                    <span className="carrito-contador">{totalCarrito}</span>
+                  </button>
+                </>
+              )}
 
               {usuario === null ? (
-                <li className="nav-item">
-                  <a
-                    href="#"
-                    className={`nav-link ${paginaActual === "login" ? "active" : ""}`}
-                    onClick={() => navegar("login")}
-                  >
-                    Iniciar sesión
-                  </a>
-                </li>
+                <button
+                  type="button"
+                  className={`btn-sesion ${paginaActual === "login" ? "active" : ""}`}
+                  onClick={() => navegar("login")}
+                >
+                  Iniciar sesión
+                </button>
               ) : (
-                <li className="nav-item">
-                  <a href="#" className="nav-link" onClick={cerrarSesion}>
-                    Cerrar sesión
-                  </a>
-                </li>
+                <button type="button" className="btn-sesion" onClick={cerrarSesion}>
+                  Cerrar sesión
+                </button>
               )}
-            </ul>
+            </div>
           </div>
         </div>
       </nav>
