@@ -4,17 +4,15 @@ import FilaCategoria from "../components/FilaCategoria";
 
 import "../styles/inicio.css";
 
-const FILAS = [
-  { id: "nuevos", titulo: "Nuevos" },
-  { id: "libros", titulo: "Popular en libros" },
-  { id: "computadores", titulo: "Popular en computadores" },
-  { id: "accesorios", titulo: "Popular en accesorios" },
-  { id: "instrumentos", titulo: "Popular en instrumentos" },
-  { id: "deportes", titulo: "Popular en artículos deportivos" },
-  { id: "otros", titulo: "Otros productos" }
-];
+export default function Inicio({ productos, categorias, cargando, error, onRecargar, onVerMercado, onVerProducto }) {
+  // Una fila de "Nuevos" y luego una fila por cada categoría que entrega la API
+  const filas = [{ id: "nuevos", titulo: "Nuevos" }];
 
-export default function Inicio({ productos, cargando, error, onRecargar, onVerMercado, onVerProducto }) {
+  categorias.forEach((categoria) => {
+    const titulo = categoria.id === "otros" ? categoria.nombre : "Popular en " + categoria.nombre.toLowerCase();
+    filas.push({ id: categoria.id, titulo: titulo });
+  });
+
   function productosDeFila(idFila) {
     if (idFila === "nuevos") {
       // Los últimos publicados primero (el id más alto es el más nuevo)
@@ -35,7 +33,7 @@ export default function Inicio({ productos, cargando, error, onRecargar, onVerMe
 
         <EstadoCarga cargando={cargando} error={error} onReintentar={onRecargar} />
 
-        {FILAS.map((fila) => (
+        {filas.map((fila) => (
           <FilaCategoria
             key={fila.id}
             titulo={fila.titulo}
