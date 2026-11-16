@@ -1,0 +1,68 @@
+# Levanta todo el proyecto: PostgreSQL, las dos APIs (FastAPI) y React.
+# Uso:  docker compose up -d --build
+# Antes: copiar .env.example como .env (en esta misma carpeta).
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: infraganti-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - postgres_infraganti:/var/lib/postgresql/data
+      # La primera vez, PostgreSQL ejecuta estos scripts en orden (01 y luego 02)
+      - ./backend/db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  api-productos:
+    build: ./backend
+    container_name: infraganti-api-productos
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - '127.0.0.1:8000:8000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api-usuarios:
+    build: ./backend
+    container_name: infraganti-api-usuarios
+    command: uvicorn usuarios:app --host 0.0.0.0 --port 8001
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - '127.0.0.1:8001:8001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: infraganti-frontend
+    ports:
+      - '127.0.0.1:5173:5173'
+    depends_on:
+      - api-productos
+      - api-usuarios
+
+volumes:
+  postgres_infraganti:
