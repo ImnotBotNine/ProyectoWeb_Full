@@ -186,3 +186,30 @@
 .btn-quitar-imagen:hover {
     background-color: #e3e6eb;
 }
+
+.publicado-acciones {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.btn-publicado-accion {
+    border: 1px solid #ffffff;
+    border-radius: 6px;
+    padding: 4px 14px;
+    background-color: transparent;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.btn-publicado-accion:hover {
+    background-color: #ffffff;
+    color: #1f2937;
+}
+
+.btn-publicado-eliminar:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #ffffff;
+}
