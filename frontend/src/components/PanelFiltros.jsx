@@ -1,6 +1,5 @@
-import { CATEGORIAS } from "../js/formato";
-
 export default function PanelFiltros({
+  categorias,
   categoria,
   onCategoria,
   estado,
@@ -31,7 +30,7 @@ export default function PanelFiltros({
           onChange={(event) => onCategoria(event.target.value)}
         >
           <option value="todas">Todas las categorías</option>
-          {CATEGORIAS.map((item) => (
+          {categorias.map((item) => (
             <option key={item.id} value={item.id}>{item.nombre}</option>
           ))}
         </select>
