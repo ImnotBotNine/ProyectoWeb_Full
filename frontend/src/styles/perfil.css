@@ -1,0 +1,156 @@
+.perfil-contenido {
+    padding: 30px 0 50px;
+}
+
+.perfil-datos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+}
+
+.perfil-datos h2 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.perfil-datos p {
+    margin: 4px 0 0;
+    color: #6b7280;
+}
+
+.perfil-numeros {
+    display: flex;
+    gap: 20px;
+}
+
+.perfil-subtitulo {
+    font-size: 1.2rem;
+    margin-bottom: 14px;
+}
+
+.perfil-subtitulo-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.pedido,
+.venta {
+    padding: 16px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background-color: #ffffff;
+}
+
+.pedido-encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.pedido-titulo {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.pedido-estado {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.estado-pendiente { background-color: #fff3cd; color: #856404; }
+.estado-aceptado { background-color: #cfe2ff; color: #084298; }
+.estado-rechazado { background-color: #f8d7da; color: #842029; }
+.estado-entregado { background-color: #d1e7dd; color: #0f5132; }
+.estado-cancelado { background-color: #e5e7eb; color: #4b5563; }
+
+.pedido-productos {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0;
+}
+
+.pedido-productos li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 0;
+    border-bottom: 1px dashed #e5e7eb;
+}
+
+.pedido-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+
+.pedido-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.pedido-nota {
+    margin: 10px 0 0;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.pedido-acciones .pedido-nota {
+    margin: 0;
+    flex: 1 1 100%;
+}
+
+.btn-pedido,
+.btn-pedido-secundario {
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.btn-pedido {
+    border: none;
+    background-color: var(--color-acento);
+    color: var(--text-white);
+}
+
+.btn-pedido-secundario {
+    border: 1px solid #9ca3af;
+    background-color: transparent;
+    color: #374151;
+}
+
+.venta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.venta small {
+    display: block;
+    color: #6b7280;
+}
+
+.venta-derecha {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
