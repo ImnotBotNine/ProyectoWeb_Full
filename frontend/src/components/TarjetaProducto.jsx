@@ -2,7 +2,6 @@ import ImagenProducto from "./ImagenProducto";
 import {
   formatearPrecio,
   formatearUsuario,
-  nombreCategoria,
   nombreEstado
 } from "../js/formato";
 
@@ -17,6 +16,7 @@ export default function TarjetaProducto({
   favorito,
   sesionIniciada,
   esAdmin,
+  esDueno,
   onVer,
   onFavorito,
   onCambiarEstado,
@@ -31,7 +31,7 @@ export default function TarjetaProducto({
 
         <div className="producto-contenido">
           <div className="producto-encabezado">
-            <span className="producto-categoria">{nombreCategoria(categoria)}</span>
+            <span className="producto-categoria">{categoria}</span>
             <span className={`badge ${vendido ? "estado-vendido" : "estado-disponible"}`}>
               {nombreEstado(estado)}
             </span>
@@ -62,13 +62,14 @@ export default function TarjetaProducto({
             )}
           </div>
 
-          {sesionIniciada && (
+          {/* Solo el vendedor (dueño) o un administrador administran la publicación */}
+          {(esDueno || esAdmin) && (
             <div className="producto-acciones">
               <button type="button" className="btn-estado" onClick={onCambiarEstado}>
                 {vendido ? "Marcar como disponible" : "Marcar como vendido"}
               </button>
 
-              {esAdmin && (
+              {(esDueno || esAdmin) && (
                 <button
                   type="button"
                   className="btn-eliminar"
