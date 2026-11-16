@@ -8,19 +8,34 @@ import Mercado from "./pages/Mercado";
 import Publicar from "./pages/Publicar";
 import Producto from "./pages/Producto";
 import Login from "./pages/Login";
+import Perfil from "./pages/Perfil";
 import { guardarDato, leerDato } from "./js/almacenamiento";
+import {
+  usarUsuario,
+  categoriasApi,
+  productosApi,
+  usuariosApi,
+  favoritosApi,
+  carritoApi,
+  pedidosApi
+} from "./services/api";
 
-const URL_API = "http://127.0.0.1:8000/productos";
-const URL_USUARIOS = "http://127.0.0.1:8001";
-
-const CLAVE_CARRITO = "infraganti-carrito";
-const CLAVE_FAVORITOS = "infraganti-favoritos";
-const CLAVE_PUBLICADOS = "infraganti-publicados";
 const CLAVE_USUARIO = "infraganti-usuario";
 const CLAVE_ULTIMA_PUBLICACION = "infraganti-ultima-publicacion";
 
+// Una sesión guardada antes de usar PostgreSQL no trae el id del usuario: se descarta
+function leerSesion() {
+  const guardado = leerDato(CLAVE_USUARIO, null);
+
+  if (guardado !== null && guardado.id === undefined) {
+    return null;
+  }
+  return guardado;
+}
+
 export default function App() {
   const [productos, setProductos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
@@ -28,36 +43,34 @@ export default function App() {
   const [busqueda, setBusqueda] = useState("");
   const [categoriaInicial, setCategoriaInicial] = useState("todas");
   const [idProducto, setIdProducto] = useState(null);
-  const [carrito, setCarrito] = useState(leerDato(CLAVE_CARRITO, []));
-  const [favoritos, setFavoritos] = useState(leerDato(CLAVE_FAVORITOS, []));
+  // Carrito y favoritos se guardan en PostgreSQL; aquí solo se muestran
+  const [carrito, setCarrito] = useState([]);
+  const [favoritos, setFavoritos] = useState([]);
   const [carritoAbierto, setCarritoAbierto] = useState(false);
-  const [idsPublicados, setIdsPublicados] = useState(leerDato(CLAVE_PUBLICADOS, []));
 
-  const [usuario, setUsuario] = useState(leerDato(CLAVE_USUARIO, null));
-
+  const [usuario, setUsuario] = useState(leerSesion());
   const [ultimaPublicacion, setUltimaPublicacion] = useState(leerDato(CLAVE_ULTIMA_PUBLICACION, 0));
+
 
   const sesionIniciada = usuario !== null;
   const esAdmin = sesionIniciada && usuario.rol === "admin";
+  const idUsuario = sesionIniciada ? usuario.id : null;
 
-  function guardarCarrito(nuevoCarrito) {
-    setCarrito(nuevoCarrito);
-    guardarDato(CLAVE_CARRITO, nuevoCarrito);
-  }
+  // Las publicaciones del usuario son los productos que tienen su id como dueño
+  const misProductos = productos.filter(
+    (producto) => sesionIniciada && producto.usuario_id === usuario.id
+  );
 
-  function guardarFavoritos(nuevosFavoritos) {
-    setFavoritos(nuevosFavoritos);
-    guardarDato(CLAVE_FAVORITOS, nuevosFavoritos);
-  }
-
-  function guardarPublicados(nuevosIds) {
-    setIdsPublicados(nuevosIds);
-    guardarDato(CLAVE_PUBLICADOS, nuevosIds);
+  // Solo se avisa cuando algo falla (con alert, como en la guía);
+  // si sale bien, el cambio ya se ve en la página
+  function mostrarError(texto) {
+    alert(texto);
   }
 
   function guardarUsuario(nuevoUsuario) {
     setUsuario(nuevoUsuario);
     guardarDato(CLAVE_USUARIO, nuevoUsuario);
+    usarUsuario(nuevoUsuario === null ? null : nuevoUsuario.id);
   }
 
   function guardarUltimaPublicacion(momento) {
@@ -70,14 +83,8 @@ export default function App() {
       setCargando(true);
       setError("");
 
-      const respuesta = await fetch(URL_API);
-
-      if (!respuesta.ok) {
-        throw new Error("No fue posible cargar los productos.");
-      }
-
-      const datos = await respuesta.json();
-      setProductos(datos);
+      setCategorias(await categoriasApi.listar());
+      setProductos(await productosApi.listar());
     } catch (error) {
       console.log(error);
       setError("No fue posible cargar los productos. Revisa que la API esté encendida.");
@@ -86,33 +93,56 @@ export default function App() {
     }
   }
 
+  async function cargarDatosUsuario(id) {
+    try {
+      setFavoritos(await favoritosApi.listar(id));
+      setCarrito(await carritoApi.listar(id));
+    } catch (error) {
+      mostrarError(error.message);
+    }
+  }
+
+  // Al abrir la página se traen categorías y productos y, si hay sesión, sus favoritos y carrito
   useEffect(() => {
+    const sesion = leerSesion();
+    if (sesion !== null) {
+      usarUsuario(sesion.id);
+      cargarDatosUsuario(sesion.id);
+    }
+
     cargarProductos();
   }, []);
 
+  function reemplazarProducto(productoActualizado) {
+    setProductos(productos.map((item) => {
+      if (item.id === productoActualizado.id) {
+        return productoActualizado;
+      }
+      return item;
+    }));
+  }
+
+  // Devuelve "" si salió bien, o el mensaje de error de la API
   async function publicarProducto(nuevoProducto) {
     try {
-      const respuesta = await fetch(URL_API, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(nuevoProducto)
-      });
-
-      if (!respuesta.ok) {
-        throw new Error("No fue posible publicar el producto.");
-      }
-
-      const productoCreado = await respuesta.json();
+      const productoCreado = await productosApi.crear(nuevoProducto);
 
       setProductos([...productos, productoCreado]);
-      guardarPublicados([...idsPublicados, productoCreado.id]);
       guardarUltimaPublicacion(Date.now());
-      return true;
+      return "";
     } catch (error) {
-      console.log(error);
-      return false;
+      return error.message;
+    }
+  }
+
+  async function editarProducto(id, datos) {
+    try {
+      const productoEditado = await productosApi.editar(id, datos);
+
+      reemplazarProducto(productoEditado);
+      return "";
+    } catch (error) {
+      return error.message;
     }
   }
 
@@ -120,110 +150,85 @@ export default function App() {
     const nuevoEstado = producto.estado === "vendido" ? "disponible" : "vendido";
 
     try {
-      setError("");
+      const productoActualizado = await productosApi.editar(producto.id, { ...producto, estado: nuevoEstado });
+      reemplazarProducto(productoActualizado);
 
-      const respuesta = await fetch(`${URL_API}/${producto.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ ...producto, estado: nuevoEstado })
-      });
-
-      if (!respuesta.ok) {
-        throw new Error("No fue posible cambiar el estado.");
-      }
-
-      const productoActualizado = await respuesta.json();
-
-      setProductos(productos.map((item) => {
-        if (item.id === producto.id) {
-          return productoActualizado;
-        }
-        return item;
-      }));
-
+      // La API ya lo quitó de los carritos; aquí se actualiza la vista
       if (nuevoEstado === "vendido") {
-        guardarCarrito(carrito.filter((item) => item.id !== producto.id));
+        setCarrito(carrito.filter((item) => item.id !== producto.id));
       }
     } catch (error) {
-      setError(error.message);
-    }
-  }
-
-  async function eliminarEnApi(id) {
-    const respuesta = await fetch(`${URL_API}/${id}`, {
-      method: "DELETE"
-    });
-
-    if (!respuesta.ok) {
-      throw new Error("No fue posible eliminar la publicación.");
+      mostrarError(error.message);
     }
   }
 
   async function eliminarProducto(id) {
     try {
-      setError("");
-      await eliminarEnApi(id);
+      await productosApi.eliminar(id);
 
+      // PostgreSQL borra el producto de favoritos y carritos (ON DELETE CASCADE)
       setProductos(productos.filter((producto) => producto.id !== id));
-      guardarCarrito(carrito.filter((producto) => producto.id !== id));
-      guardarFavoritos(favoritos.filter((idFavorito) => idFavorito !== id));
-      guardarPublicados(idsPublicados.filter((idPublicado) => idPublicado !== id));
+      setCarrito(carrito.filter((producto) => producto.id !== id));
+      setFavoritos(favoritos.filter((idFavorito) => idFavorito !== id));
     } catch (error) {
-      setError(error.message);
+      mostrarError(error.message);
     }
   }
 
   async function borrarPublicados() {
-    try {
-      setError("");
+    const ids = misProductos.map((producto) => producto.id);
+    let borrados = 0;
 
-      for (const id of idsPublicados) {
-        await eliminarEnApi(id);
+    for (const id of ids) {
+      try {
+        await productosApi.eliminar(id);
+        borrados = borrados + 1;
+      } catch (error) {
+        console.log(error);
       }
+    }
 
-      setProductos(productos.filter((producto) => !idsPublicados.includes(producto.id)));
-      guardarCarrito(carrito.filter((producto) => !idsPublicados.includes(producto.id)));
-      guardarFavoritos(favoritos.filter((idFavorito) => !idsPublicados.includes(idFavorito)));
-      guardarPublicados([]);
-    } catch (error) {
-      setError(error.message);
-      cargarProductos();
+    cargarProductos();
+
+    if (borrados < ids.length) {
+      mostrarError("Algunas publicaciones están en pedidos y no se pudieron eliminar.");
     }
   }
 
   async function iniciarSesion(nick, contrasena) {
     try {
-      const respuesta = await fetch(`${URL_USUARIOS}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ nick: nick, contrasena: contrasena })
-      });
-
-      if (!respuesta.ok) {
-        return "Nick o contraseña incorrectos.";
-      }
-
-      const datos = await respuesta.json();
+      const datos = await usuariosApi.login(nick, contrasena);
 
       guardarUsuario(datos);
+      cargarDatosUsuario(datos.id);
       navegar("inicio");
       return "";
     } catch (error) {
       console.log(error);
-      return "No fue posible conectar con la API. Revisa que esté encendida.";
+      return error.message;
+    }
+  }
+
+  // Crea la cuenta y deja la sesión iniciada, igual que al ingresar
+  async function crearCuenta(datos) {
+    try {
+      const nuevoUsuario = await usuariosApi.registrar(datos);
+
+      guardarUsuario(nuevoUsuario);
+      cargarDatosUsuario(nuevoUsuario.id);
+      navegar("inicio");
+      return "";
+    } catch (error) {
+      return error.message;
     }
   }
 
   function cerrarSesion() {
+    // Solo se cierra la sesión: el carrito y los favoritos siguen guardados en la base
     guardarUsuario(null);
-    guardarCarrito([]);
-    guardarFavoritos([]);
+    setCarrito([]);
+    setFavoritos([]);
     setCarritoAbierto(false);
-    guardarPublicados([]);
     navegar("inicio");
   }
 
@@ -250,26 +255,64 @@ export default function App() {
     }
   }
 
-  function agregarCarrito(producto) {
+  async function agregarCarrito(producto) {
     const yaExiste = carrito.some((item) => item.id === producto.id);
 
-    if (producto.estado === "vendido" || yaExiste) {
+    if (yaExiste) {
+      mostrarError("El producto ya está en tu carrito.");
       return;
     }
 
-    guardarCarrito([...carrito, producto]);
-  }
-
-  function alternarFavorito(id) {
-    if (favoritos.includes(id)) {
-      guardarFavoritos(favoritos.filter((idFavorito) => idFavorito !== id));
-    } else {
-      guardarFavoritos([...favoritos, id]);
+    try {
+      const productoAgregado = await carritoApi.agregar(usuario.id, producto.id);
+      setCarrito([...carrito, productoAgregado]);
+    } catch (error) {
+      mostrarError(error.message);
     }
   }
 
-  function quitarCarrito(id) {
-    guardarCarrito(carrito.filter((item) => item.id !== id));
+  async function alternarFavorito(id) {
+    try {
+      if (favoritos.includes(id)) {
+        await favoritosApi.quitar(usuario.id, id);
+        setFavoritos(favoritos.filter((idFavorito) => idFavorito !== id));
+      } else {
+        await favoritosApi.agregar(usuario.id, id);
+        setFavoritos([...favoritos, id]);
+      }
+    } catch (error) {
+      mostrarError(error.message);
+    }
+  }
+
+  async function quitarCarrito(id) {
+    try {
+      await carritoApi.quitar(usuario.id, id);
+      setCarrito(carrito.filter((item) => item.id !== id));
+    } catch (error) {
+      mostrarError(error.message);
+    }
+  }
+
+  // Convierte el carrito en solicitudes de compra (una por vendedor) y lleva al perfil
+  async function comprar() {
+    try {
+      await pedidosApi.crear(usuario.id);
+      setCarrito([]);
+      setCarritoAbierto(false);
+      navegar("perfil");
+    } catch (error) {
+      mostrarError(error.message);
+    }
+  }
+
+  async function vaciarCarrito() {
+    try {
+      await carritoApi.vaciar(usuario.id);
+      setCarrito([]);
+    } catch (error) {
+      mostrarError(error.message);
+    }
   }
 
   return (
@@ -289,6 +332,7 @@ export default function App() {
         {pagina === "inicio" && (
           <Inicio
             productos={productos}
+            categorias={categorias}
             cargando={cargando}
             error={error}
             onRecargar={cargarProductos}
@@ -300,6 +344,7 @@ export default function App() {
         {pagina === "mercado" && (
           <Mercado
             productos={productos}
+            categorias={categorias}
             cargando={cargando}
             error={error}
             onRecargar={cargarProductos}
@@ -308,6 +353,7 @@ export default function App() {
             categoriaInicial={categoriaInicial}
             sesionIniciada={sesionIniciada}
             esAdmin={esAdmin}
+            idUsuario={idUsuario}
             favoritos={favoritos}
             onFavorito={alternarFavorito}
             onCambiarEstado={cambiarEstado}
@@ -324,6 +370,7 @@ export default function App() {
             error={error}
             onRecargar={cargarProductos}
             sesionIniciada={sesionIniciada}
+            idUsuario={idUsuario}
             onIrLogin={() => navegar("login")}
             totalCarrito={carrito.length}
             onAbrirCarrito={() => setCarritoAbierto(true)}
@@ -335,18 +382,30 @@ export default function App() {
 
         {pagina === "publicar" && sesionIniciada && (
           <Publicar
-            productos={productos}
-            idsPublicados={idsPublicados}
+            misProductos={misProductos}
+            categorias={categorias}
             esAdmin={esAdmin}
             ultimaPublicacion={ultimaPublicacion}
+            usuario={usuario}
             onPublicar={publicarProducto}
+            onEditar={editarProducto}
+            onEliminar={eliminarProducto}
             onBorrarPublicados={borrarPublicados}
             onIrMercado={() => navegar("mercado")}
           />
         )}
 
-        {(pagina === "login" || (pagina === "publicar" && !sesionIniciada)) && (
-          <Login onIniciarSesion={iniciarSesion} />
+        {pagina === "perfil" && sesionIniciada && (
+          <Perfil
+            idUsuario={usuario.id}
+            onError={mostrarError}
+            onProductosCambiaron={cargarProductos}
+            onIrPublicar={() => navegar("publicar")}
+          />
+        )}
+
+        {(pagina === "login" || ((pagina === "publicar" || pagina === "perfil") && !sesionIniciada)) && (
+          <Login onIniciarSesion={iniciarSesion} onCrearCuenta={crearCuenta} />
         )}
       </main>
 
@@ -357,9 +416,11 @@ export default function App() {
           carrito={carrito}
           onCerrar={() => setCarritoAbierto(false)}
           onQuitar={quitarCarrito}
-          onVaciar={() => guardarCarrito([])}
+          onVaciar={vaciarCarrito}
+          onComprar={comprar}
         />
       )}
+
     </>
   );
 }
