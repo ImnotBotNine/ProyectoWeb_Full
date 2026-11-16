@@ -1,13 +1,93 @@
+/* Fondo con la foto del campus (misma técnica que el Hero de Inicio) */
 .login-contenido {
-    padding: 48px 24px;
-    min-height: 60vh;
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    padding: 64px 24px;
 }
 
+.login-fondo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Velo navy suave para que la foto no compita con el formulario */
+.login-velo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(14, 23, 36, 0.3);
+}
+
+.login-escenario {
+    position: relative;
+    max-width: 1100px;
+}
+
+/* Marca a la izquierda, formulario a la derecha */
+.login-fila {
+    align-items: center;
+    justify-content: space-between;
+}
+
+.login-marca {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.login-marca-logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 24px;
+    background-color: rgba(14, 23, 36, 0.85);
+    border-bottom: 5px solid var(--color-acento);
+    color: var(--text-white);
+    font-size: 3.5rem;
+    font-weight: bold;
+}
+
+.login-marca-logo img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+}
+
+.login-marca-lema {
+    margin: 0;
+    padding: 8px 20px;
+    background-color: rgba(14, 23, 36, 0.85);
+    color: var(--text-white);
+    font-size: 1.3rem;
+}
+
+/* Tarjeta blanca de esquinas rectas (estilo Roblox 2016),
+   con la tipografía original de Infraganti */
 .login-card {
-    border: 1px solid #dfe2e6;
-    border-top: 5px solid var(--color-acento);
-    border-radius: 12px;
-    background-color: #f4f5f7;
+    border: none;
+    border-radius: 0;
+    background-color: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.login-card .card-body {
+    padding: 26px 26px 26px 26px;
+}
+
+.login-card .form-control {
+    height: 46px;
+    border-radius: 3px;
 }
 
 .login-card h3 {
@@ -28,7 +108,7 @@
 
 .btn-ingresar {
     border: none;
-    border-radius: 7px;
+    border-radius: 3px;
     padding: 11px;
     background-color: var(--color-acento);
     color: var(--text-white);
@@ -39,9 +119,93 @@
     background-color: #7f0b1a;
 }
 
-.login-ayuda {
+.btn-ingresar:disabled,
+.btn-crear-cuenta:disabled {
+    opacity: 0.7;
+}
+
+/* Pestañas Iniciar sesión / Crear cuenta arriba de la tarjeta */
+.login-pestanas {
+    display: flex;
+    border-bottom: 1px solid #d5d8dc;
+}
+
+.login-pestana {
+    flex: 1;
+    padding: 14px 10px;
+    border: none;
+    border-bottom: 4px solid transparent;
+    background-color: #f2f4f5;
+    color: #69717c;
+    font-weight: bold;
+}
+
+.login-pestana.activa {
+    background-color: transparent;
+    border-bottom-color: var(--color-acento);
+    color: var(--bg-dark);
+}
+
+/* Título en mayúsculas, como el formulario de registro de Roblox 2016 */
+.login-titulo {
+    margin-bottom: 20px;
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 1.15rem;
+}
+
+.login-nota {
+    margin: 0 0 14px 0;
+    color: #69717c;
+    font-size: 0.78rem;
+    text-align: center;
+}
+
+.login-cambiar {
     margin: 16px 0 0 0;
     color: #69717c;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     text-align: center;
+}
+
+/* Botón verde grande para crear la cuenta */
+.btn-crear-cuenta {
+    border: none;
+    border-radius: 3px;
+    padding: 12px;
+    background-color: var(--color-verde);
+    color: var(--text-white);
+    font-size: 1.05rem;
+    font-weight: bold;
+}
+
+.btn-crear-cuenta:hover {
+    background-color: var(--color-verde-oscuro);
+}
+
+/* Tablet y celular: marca arriba, formulario abajo */
+@media (max-width: 991px) {
+    .login-fila {
+        justify-content: center;
+    }
+
+    .login-marca-logo {
+        font-size: 2.4rem;
+    }
+
+    .login-marca-logo img {
+        width: 44px;
+        height: 44px;
+    }
+
+    .login-marca-lema {
+        font-size: 1rem;
+        text-align: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .login-contenido {
+        padding: 32px 4px;
+    }
 }
