@@ -5,12 +5,12 @@ import EstadoCarga from "../components/EstadoCarga";
 import PanelFiltros from "../components/PanelFiltros";
 import MensajeVacio from "../components/MensajeVacio";
 import TarjetaProducto from "../components/TarjetaProducto";
-import { nombreCategoria } from "../js/formato";
 
 import "../styles/mercado.css";
 
 export default function Mercado({
   productos,
+  categorias,
   cargando,
   error,
   onRecargar,
@@ -19,6 +19,7 @@ export default function Mercado({
   categoriaInicial,
   sesionIniciada,
   esAdmin,
+  idUsuario,
   favoritos,
   onFavorito,
   onCambiarEstado,
@@ -37,7 +38,7 @@ export default function Mercado({
     return (
       producto.nombre.toLowerCase().includes(texto) ||
       producto.descripcion.toLowerCase().includes(texto) ||
-      nombreCategoria(producto.categoria).toLowerCase().includes(texto)
+      producto.categoria_nombre.toLowerCase().includes(texto)
     );
   }
 
@@ -95,6 +96,7 @@ export default function Mercado({
           <div className="row g-4">
             <aside className="col-12 col-lg-3">
               <PanelFiltros
+                categorias={categorias}
                 categoria={categoria}
                 onCategoria={setCategoria}
                 estado={estado}
@@ -135,7 +137,7 @@ export default function Mercado({
                   <TarjetaProducto
                     key={producto.id}
                     nombre={producto.nombre}
-                    categoria={producto.categoria}
+                    categoria={producto.categoria_nombre}
                     estado={producto.estado}
                     precio={producto.precio}
                     descripcion={producto.descripcion}
@@ -144,6 +146,7 @@ export default function Mercado({
                     favorito={favoritos.includes(producto.id)}
                     sesionIniciada={sesionIniciada}
                     esAdmin={esAdmin}
+                    esDueno={idUsuario !== null && producto.usuario_id === idUsuario}
                     onVer={() => onVerProducto(producto.id)}
                     onFavorito={() => onFavorito(producto.id)}
                     onCambiarEstado={() => onCambiarEstado(producto)}
