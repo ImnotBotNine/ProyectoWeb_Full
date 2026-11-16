@@ -1,23 +1,3 @@
-export const CATEGORIAS = [
-  { id: "libros", nombre: "Libros" },
-  { id: "computadores", nombre: "Computadores" },
-  { id: "accesorios", nombre: "Accesorios" },
-  { id: "instrumentos", nombre: "Instrumentos" },
-  { id: "deportes", nombre: "Artículos deportivos" },
-  { id: "otros", nombre: "Otros productos" }
-];
-
-export function nombreCategoria(idCategoria) {
-  const categoria = CATEGORIAS.find(
-    (item) => item.id === idCategoria
-  );
-
-  if (categoria) {
-    return categoria.nombre;
-  }
-  return "Otros";
-}
-
 export function acortarTexto(texto, largo) {
   if (texto.length > largo) {
     return texto.substring(0, largo) + "...";
@@ -37,6 +17,22 @@ export function formatearUsuario(usuario) {
     return "Por usuario";
   }
   return "Por " + usuario;
+}
+
+export function formatearFecha(fecha) {
+  return new Date(fecha).toLocaleString("es-CL");
+}
+
+const NOMBRES_ESTADO_PEDIDO = {
+  pendiente: "Esperando al vendedor",
+  aceptado: "Aceptado",
+  rechazado: "Rechazado",
+  entregado: "Entregado y pagado",
+  cancelado: "Cancelado"
+};
+
+export function nombreEstadoPedido(estado) {
+  return NOMBRES_ESTADO_PEDIDO[estado];
 }
 
 export function nombreEstado(estado) {
