@@ -76,15 +76,27 @@ function validarCampo(campo, valor) {
 }
 
 export default function Publicar({
-  productos,
-  idsPublicados,
+  usuario,
+  misProductos,
+  categorias,
   esAdmin,
   ultimaPublicacion,
   onPublicar,
+  onEditar,
+  onEliminar,
   onBorrarPublicados,
   onIrMercado
 }) {
-  const [datos, setDatos] = useState(DATOS_VACIOS);
+  // El formulario parte con el nombre y la carrera de la cuenta (el vendedor)
+  const datosIniciales = {
+    ...DATOS_VACIOS,
+    vendedor: usuario.nombre || "",
+    carrera: usuario.carrera || ""
+  };
+
+  const [datos, setDatos] = useState(datosIniciales);
+  // Si tiene un id, el formulario está editando esa publicación en vez de crear una nueva
+  const [productoEditando, setProductoEditando] = useState(null);
   const [errores, setErrores] = useState({});
   const [imagen, setImagen] = useState("");
   const [mensaje, setMensaje] = useState({ tipo: "", texto: "" });
@@ -119,14 +131,41 @@ export default function Publicar({
   }
 
   function vaciarCampos() {
-    setDatos(DATOS_VACIOS);
+    setDatos(datosIniciales);
     setErrores({});
     quitarImagen();
   }
 
   function limpiarTodo() {
     vaciarCampos();
+    setProductoEditando(null);
     setMensaje({ tipo: "", texto: "" });
+  }
+
+  function comenzarEdicion(producto) {
+    setDatos({
+      nombre: producto.nombre,
+      categoria: producto.categoria,
+      precio: String(producto.precio),
+      descripcion: producto.descripcion,
+      vendedor: producto.vendedor,
+      carrera: producto.carrera,
+      contacto: producto.contacto
+    });
+    setErrores({});
+    setImagen(producto.imagen);
+    setProductoEditando(producto);
+    setMensaje({ tipo: "", texto: "" });
+  }
+
+  function eliminarPublicacion(producto) {
+    if (!confirm("¿Deseas eliminar " + producto.nombre + "?")) {
+      return;
+    }
+    if (productoEditando !== null && productoEditando.id === producto.id) {
+      limpiarTodo();
+    }
+    onEliminar(producto.id);
   }
 
   function quitarImagen() {
@@ -197,7 +236,7 @@ export default function Publicar({
       return;
     }
 
-    if (!esAdmin) {
+    if (!esAdmin && productoEditando === null) {
       const segundosPasados = (Date.now() - ultimaPublicacion) / 1000;
 
       if (segundosPasados < SEGUNDOS_ESPERA) {
@@ -210,7 +249,7 @@ export default function Publicar({
     const nuevoProducto = {
       nombre: datos.nombre.trim(),
       categoria: datos.categoria,
-      estado: "disponible",
+      estado: productoEditando === null ? "disponible" : productoEditando.estado,
       precio: Number(datos.precio),
       descripcion: datos.descripcion.trim(),
       vendedor: datos.vendedor.trim(),
@@ -219,14 +258,21 @@ export default function Publicar({
       imagen: imagen
     };
 
-    const publicado = await onPublicar(nuevoProducto);
+    // La API responde "" si todo salió bien, o el motivo del error
+    let errorApi;
+    if (productoEditando === null) {
+      errorApi = await onPublicar(nuevoProducto);
+    } else {
+      errorApi = await onEditar(productoEditando.id, nuevoProducto);
+    }
 
-    if (!publicado) {
-      setMensaje({ tipo: "error", texto: "No fue posible publicar. Revisa que la API esté encendida." });
+    if (errorApi !== "") {
+      setMensaje({ tipo: "error", texto: errorApi });
       return;
     }
 
-    setMensaje({ tipo: "exito", texto: "" });
+    setMensaje({ tipo: "exito", texto: productoEditando === null ? "publicado" : "editado" });
+    setProductoEditando(null);
     vaciarCampos();
   }
 
@@ -243,15 +289,13 @@ export default function Publicar({
       ? `${largoDescripcion} caracteres (mínimo ${LARGO_MINIMO_DESCRIPCION})`
       : `${largoDescripcion} caracteres`;
 
-  const publicados = productos.filter(
-    (producto) => idsPublicados.includes(producto.id)
-  );
-
   return (
     <>
       <EncabezadoPagina
-        titulo="Publicar un producto"
-        texto="Completa los datos y tu publicación aparecerá en el Mercado."
+        titulo={productoEditando === null ? "Publicar un producto" : "Editar publicación"}
+        texto={productoEditando === null
+          ? "Completa los datos y tu publicación aparecerá en el Mercado."
+          : "Cambia los datos de " + productoEditando.nombre + " y guarda."}
       />
 
       <section className="publicar-contenido">
@@ -274,6 +318,7 @@ export default function Publicar({
                     id="categoria"
                     etiqueta="Categoría *"
                     tipo="select"
+                    opciones={categorias}
                     valor={datos.categoria}
                     error={errores.categoria}
                     onCambiar={(valor) => cambiarCampo("categoria", valor)}
@@ -365,7 +410,7 @@ export default function Publicar({
 
                   {mensaje.tipo === "exito" && (
                     <div className="alert alert-success">
-                      Tu producto quedó publicado. <button type="button" className="btn-enlace" onClick={onIrMercado}>
+                      {mensaje.texto === "editado" ? "Los cambios quedaron guardados." : "Tu producto quedó publicado."} <button type="button" className="btn-enlace" onClick={onIrMercado}>
                         Verlo en el Mercado
                       </button>
                     </div>
@@ -376,15 +421,17 @@ export default function Publicar({
                   )}
 
                   <div className="formulario-acciones">
-                    <button type="submit" className="btn-publicar">Publicar producto</button>
+                    <button type="submit" className="btn-publicar">
+                      {productoEditando === null ? "Publicar producto" : "Guardar cambios"}
+                    </button>
                     <button type="button" className="btn-limpiar-form" onClick={limpiarTodo}>
-                      Limpiar
+                      {productoEditando === null ? "Limpiar" : "Cancelar edición"}
                     </button>
                   </div>
                 </form>
               </div>
 
-              {publicados.length > 0 && (
+              {misProductos.length > 0 && (
                 <section className="panel-publicados">
                   <div className="publicados-header">
                     <h2>Tus publicaciones</h2>
@@ -399,14 +446,17 @@ export default function Publicar({
                     )}
                   </div>
 
-                  {publicados.map((producto) => (
+                  {misProductos.map((producto) => (
                     <ResumenPublicado
                       key={producto.id}
                       nombre={producto.nombre}
-                      categoria={producto.categoria}
+                      categoria={producto.categoria_nombre}
+                      estado={producto.estado}
                       descripcion={producto.descripcion}
                       precio={producto.precio}
                       vendedor={producto.vendedor}
+                      onEditar={() => comenzarEdicion(producto)}
+                      onEliminar={() => eliminarPublicacion(producto)}
                     />
                   ))}
                 </section>
