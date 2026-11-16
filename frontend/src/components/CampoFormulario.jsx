@@ -1,5 +1,3 @@
-import { CATEGORIAS } from "../js/formato";
-
 export default function CampoFormulario({
   id,
   etiqueta,
@@ -8,6 +6,7 @@ export default function CampoFormulario({
   error,
   placeholder,
   ayuda,
+  opciones = [],
   onCambiar,
   onSalir
 }) {
@@ -26,7 +25,7 @@ export default function CampoFormulario({
           onBlur={onSalir}
         >
           <option value="">Elige una categoría</option>
-          {CATEGORIAS.map((categoria) => (
+          {opciones.map((categoria) => (
             <option key={categoria.id} value={categoria.id}>{categoria.nombre}</option>
           ))}
         </select>
