@@ -3,7 +3,7 @@ import MensajeVacio from "../components/MensajeVacio";
 import ImagenProducto from "../components/ImagenProducto";
 import TarjetaRecomendacion from "../components/TarjetaRecomendacion";
 import InfoLibro from "../components/InfoLibro";
-import { formatearPrecio, nombreCategoria, nombreEstado } from "../js/formato";
+import { formatearPrecio, nombreEstado } from "../js/formato";
 
 import "../styles/producto.css";
 
@@ -16,6 +16,7 @@ export default function Producto({
   error,
   onRecargar,
   sesionIniciada,
+  idUsuario,
   onIrLogin,
   totalCarrito,
   onAbrirCarrito,
@@ -45,6 +46,7 @@ export default function Producto({
   }
 
   const vendido = producto.estado === "vendido";
+  const esPropio = idUsuario !== null && producto.usuario_id === idUsuario;
 
   const recomendaciones = productos.filter(
     (item) => item.categoria === producto.categoria && item.id !== producto.id
@@ -102,7 +104,11 @@ export default function Producto({
                 </button>
               )}
 
-              {!vendido && sesionIniciada && (
+              {!vendido && esPropio && (
+                <p className="detalle-vendido">Esta es tu publicación: no puedes comprarla.</p>
+              )}
+
+              {!vendido && sesionIniciada && !esPropio && (
                 <button
                   type="button"
                   className="btn-agregar-carrito"
@@ -114,7 +120,7 @@ export default function Producto({
             </div>
 
             <span className="detalle-etiqueta">Categoría</span>
-            <span className="detalle-valor">{nombreCategoria(producto.categoria)}</span>
+            <span className="detalle-valor">{producto.categoria_nombre}</span>
 
             <span className="detalle-etiqueta">Estado</span>
             <span>
